@@ -16,6 +16,7 @@ public class App extends JPanel implements ActionListener {
 
     private static final int WIDTH = 500;
     private static final int HEIGHT = 500;
+    private static final int BUTTON_SIZE = 75;
 
     private static final Color GREEN = Color.GREEN;
     private static final Color GRAY = Color.GRAY;
@@ -39,31 +40,31 @@ public class App extends JPanel implements ActionListener {
             size
         );
 
-        renderBoard(75);
+        renderButtons();
     }
 
-    private void renderBoard(int buttonSize) {
+    private void renderButtons() {
         for (
             int i = 0, y = 100;
             i < board.length;
-            i++, y += buttonSize
+            i++, y += BUTTON_SIZE
         ) {
             for (
                 int j = 0, x = 100;
                 j < board[i].length;
-                j++, x += buttonSize
+                j++, x += BUTTON_SIZE
             ) {
                 int num = board[i][j];
-                if (num == 0) { continue; }
+
                 Color color = num == completed[i][j]
                     ? GREEN
                     : GRAY;
-                Button button = new Button(
+                JButton button = new JButton(
                     String.valueOf(num)
                 );
                 button.setBackground(color);
                 button.setLocation(x, y);
-                button.setSize(buttonSize, buttonSize);
+                button.setSize(BUTTON_SIZE, BUTTON_SIZE);
                 button.addActionListener(this);
 
                 frame.add(button);
@@ -75,8 +76,8 @@ public class App extends JPanel implements ActionListener {
         JButton src = (JButton) event.getSource();
 
         int[] neighbors = getBlankNeighbors();
+        int num = Integer.parseInt(src.getText());
 
-        int num = Integer.getInteger(src.getText());
         if (contains(neighbors, num)) {
             Pair pressedCoord = getTile(num);
             Pair blankCoord = getTile(0);
@@ -85,8 +86,16 @@ public class App extends JPanel implements ActionListener {
             board[pressedCoord.x][pressedCoord.y] = board[blankCoord.x][blankCoord.y];
             board[blankCoord.x][blankCoord.y] = temp;
 
+            System.out.println(Arrays.deepToString(board));
+
             moves++;
-            renderBoard(75);
+            removeAll();
+            revalidate();
+            repaint();
+            renderButtons();
+            revalidate();
+            repaint();
+
 
             // the user's board equals the sorted/target end board `completed`
             // meaning the user has completed the puzzle / has won
@@ -209,6 +218,7 @@ public class App extends JPanel implements ActionListener {
         frame.setSize(WIDTH, HEIGHT);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.add(app);
+        frame.setLayout(new GridLayout(0, 4));
         frame.setVisible(true);
     }
 }
