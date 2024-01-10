@@ -1,224 +1,155 @@
-import java.util.Arrays;
-
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
+import java.io.IOException;
+
 public class App extends JPanel implements ActionListener {
-    // the size of a singular dimension
-    private int size;
-    private int moves;
-    private JFrame frame;
+    private GamePanel gamePanel;
 
-    private int[] allNumbers;
-    private int[][] board;
-    private int[][] completed;
+    private JLabel movesLabel;
+    private JButton restart;
+    private JLabel sizeLabel;
+    private JTextField sizeInput;
 
-    private static final int WIDTH = 500;
-    private static final int HEIGHT = 500;
-    private static final int BUTTON_SIZE = 75;
+    private int size = 4;
 
-    private static final Color GREEN = Color.GREEN;
-    private static final Color GRAY = Color.GRAY;
+    private static final int WIDTH = 600;
+    private static final int HEIGHT = 800;
 
-    public App(int size, JFrame frame) {
-        this.size = size;
-        this.moves = 0;
-        this.frame = frame;
+    private static final Color TITLE_COLOR = new Color(255, 255, 255);
+    private static final Color TEXT_COLOR = new Color(170, 255, 200);
+    private static final Color BG_COLOR = new Color(40, 50, 60);
 
-        allNumbers = generateNumbers(size);
+    private final Font TITLE_FONT;
+    private final Font CODE_FONT;
 
-        board = chunk(
-            pushBack(
-                shuffle(allNumbers.clone()),
-                0
-            ),
-            size
-        );
-        completed = chunk(
-            pushBack(allNumbers, 0),
-            size
-        );
+    public App() throws FontFormatException, IOException {
+        setBackground(BG_COLOR);
 
-        renderButtons();
+        TITLE_FONT = getFont("/fonts/BrownieStencil-vmrPE.ttf", 50);
+        CODE_FONT = getFont("/fonts/FiraCodeNerdFont-Bold.ttf", 30);
+
+        movesLabel = new JLabel("Moves: 0");
+        movesLabel.setFont(CODE_FONT);
+        movesLabel.setForeground(TEXT_COLOR);
+        gamePanel = new GamePanel(size, movesLabel, BG_COLOR);
+
+        GridBagLayout layout = new GridBagLayout();
+        setLayout(layout);
+        GridBagConstraints constraints = getDefaultConstraints();
+
+        JLabel title = new JLabel("Number Slider");
+        title.setFont(TITLE_FONT);
+        title.setForeground(TITLE_COLOR);
+
+        constraints.gridy = 0;
+        add(title, constraints);
+
+        constraints.gridy = 1;
+        add(movesLabel, constraints);
+
+        constraints.gridy = 2;
+        constraints.fill = GridBagConstraints.BOTH;
+        constraints.insets = new Insets(0, 50, 0, 50);
+        // outer container around the game tiles
+        // adds an even 100px margin around the entire game
+        // csizeLabelizes the game on the frame
+        //
+        // <https://stackoverflow.com/questions/30611975/giving-a-jpanel-a-percentage-based-width>
+        //
+        // Uses `GridBagLayout` to do so.
+        add(gamePanel, constraints);
+
+        JPanel controls = new JPanel();
+        controls.setBackground(BG_COLOR);
+
+        restart = new JButton("Restart");
+        restart.setForeground(Color.WHITE);
+        restart.setBackground(Color.RED);
+
+        sizeInput = new JTextField(5);
+
+        sizeLabel = new JLabel("    Grid Size:");
+        sizeLabel.setForeground(Color.WHITE);
+
+        for (JComponent component : new JComponent[] {
+            restart,
+            sizeLabel,
+            sizeInput,
+        }) {
+            component.setBorder(
+                BorderFactory.createEmptyBorder(10, 10, 10, 10)
+            );
+            component.setFont(
+                CODE_FONT.deriveFont(Font.PLAIN, 20)
+            );
+
+            if (component instanceof JButton) {
+                restart.addActionListener(this);
+            }
+            controls.add(component);
+        }
+
+        constraints.gridy = 3;
+        constraints.insets = new Insets(0, 0, 0, 0);
+        constraints.fill = GridBagConstraints.NONE;
+
+        add(controls, constraints);
     }
 
-    private void renderButtons() {
-        for (
-            int i = 0, y = 100;
-            i < board.length;
-            i++, y += BUTTON_SIZE
-        ) {
-            for (
-                int j = 0, x = 100;
-                j < board[i].length;
-                j++, x += BUTTON_SIZE
-            ) {
-                int num = board[i][j];
+    // loads in a custom font file (.ttf) as a `Font`:
+    //
+    // <https://stackoverflow.com/questions/71125231/how-to-set-the-size-of-a-font-from-a-file-in-swing>
+    //
+    private Font getFont(String path, int size) throws FontFormatException, IOException {
+        return Font.createFont(
+            Font.TRUETYPE_FONT,
+            this.getClass().getResourceAsStream(path)
+        ).deriveFont((float) size);
+    }
 
-                Color color = num == completed[i][j]
-                    ? GREEN
-                    : GRAY;
-                JButton button = new JButton(
-                    String.valueOf(num)
-                );
-                button.setBackground(color);
-                button.setLocation(x, y);
-                button.setSize(BUTTON_SIZE, BUTTON_SIZE);
-                button.addActionListener(this);
-
-                frame.add(button);
-            }
-        }
+    private GridBagConstraints getDefaultConstraints() {
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.anchor = GridBagConstraints.CENTER;
+        constraints.weightx = 0.5;
+        constraints.weighty = 0.5;
+        return constraints;
     }
 
     public void actionPerformed(ActionEvent event) {
-        JButton src = (JButton) event.getSource();
+        Object component = event.getSource();
 
-        int[] neighbors = getBlankNeighbors();
-        int num = Integer.parseInt(src.getText());
+        if (component == restart) {
+            remove(gamePanel);
 
-        if (contains(neighbors, num)) {
-            Pair pressedCoord = getTile(num);
-            Pair blankCoord = getTile(0);
+            try {
+                size = Integer.parseInt(
+                    sizeInput.getText()
+                );
+            } catch (NumberFormatException err) {}
 
-            int temp = board[pressedCoord.x][pressedCoord.y];
-            board[pressedCoord.x][pressedCoord.y] = board[blankCoord.x][blankCoord.y];
-            board[blankCoord.x][blankCoord.y] = temp;
+            movesLabel.setText("Moves: 0");
+            gamePanel = new GamePanel(size, movesLabel, BG_COLOR);
 
-            System.out.println(Arrays.deepToString(board));
+            GridBagConstraints constraints = getDefaultConstraints();
+            constraints.gridy = 2;
+            constraints.fill = GridBagConstraints.BOTH;
+            constraints.insets = new Insets(0, 50, 0, 50);
 
-            moves++;
-            removeAll();
+            add(gamePanel, constraints);
             revalidate();
             repaint();
-            renderButtons();
-            revalidate();
-            repaint();
-
-
-            // the user's board equals the sorted/target end board `completed`
-            // meaning the user has completed the puzzle / has won
-            if (Arrays.deepEquals(board, completed)) {
-                System.out.println("You've won!");
-            }
         }
     }
 
-    private static boolean contains(int[] arr, int target) {
-        for (int element : arr) {
-            if (element == target) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // appends a single `element` to the back of an array: `arr`
-    private static int[] pushBack(int[] arr, int element) {
-        int[] copy = new int[arr.length + 1];
-
-        for (int i = 0; i < arr.length; i++) {
-            copy[i] = arr[i];
-        }
-        copy[arr.length] = element;
-        return copy;
-    }
-
-    // generates the array of numbers that will be used
-    // from [i, size^2]
-    private static int[] generateNumbers(int size) {
-        int count = size * size;
-        int[] arr = new int[count - 1];
-
-        for (int i = 1; i < count; i++) {
-            arr[i - 1] = i;
-        }
-        return arr;
-    }
-
-    // randomly shuffles a 1 dimensional array using the
-    // [Fish Yates Algorithm](https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle)
-    //
-    // generates random indices using `Math.random` that are in range of the array's length
-    // and then swaps the array's elements one by one with the randomly generated index.
-    private static int[] shuffle(int[] arr) {
-        for (int i = 0; i < arr.length; i++) {
-            int j = (int) (Math.random() * arr.length - 1) + 1;
-
-            int temp = arr[i];
-            arr[i] = arr[j];
-            arr[j] = temp;
-        }
-        return arr;
-    }
-
-    // chunks a 1 dimensional array
-    // into a 2 dimensional array with row length's of `size`
-    // chunk([1, 2, 3, 4]), size=2 -> [[1, 2], [3, 4]]
-    private static int[][] chunk(int[] arr, int size) {
-        int[][] chunked = new int[size][];
-
-        for (
-            int i = 0, idx = 0;
-            i < arr.length;
-            i += size, idx += 1
-        ) {
-            int[] chunk = new int[size];
-
-            for (int j = i; j < i + size; j++) {
-                chunk[j - i] = arr[j];
-            }
-            chunked[idx] = chunk;
-        }
-        return chunked;
-    }
-
-    // returns the indices of the tile that has a label/value of `num`
-    private Pair getTile(int num) {
-        for (int i = 0; i < board.length; i++) {
-            for (int j = 0; j < board[i].length; j++) {
-                if (board[i][j] == num) {
-                    return new Pair(i, j);
-                }
-            }
-        }
-        // not found but this should not be reached
-        // if `num` is in `[0, size * size]`
-        return null;
-    }
-
-    // gets the numbers that are in the 4-neighborhood of the blank tile
-    // effectively are all the tiles that are able to be selected/moved
-    private int[] getBlankNeighbors() {
-        Pair empty = getTile(0);
-
-        int[] neighbors = new int[4];
-        Pair[] pairs = empty.getNeighbors();
-
-        for (int i = 0; i < pairs.length; i++) {
-            Pair pair = pairs[i];
-
-            if (
-                0 <= pair.x
-                && pair.x < size
-                && 0 <= pair.y
-                && pair.y < size
-            ) {
-                neighbors[i] = board[pair.x][pair.y];
-            }
-        }
-        return neighbors;
-    }
-
-    public static void main(String[] args) {
+    public static void main(String[] args) throws FontFormatException, IOException {
         JFrame frame = new JFrame("Number Slider");
-        App app = new App(4, frame);
+        App app = new App();
 
         frame.setSize(WIDTH, HEIGHT);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.add(app);
-        frame.setLayout(new GridLayout(0, 4));
         frame.setVisible(true);
     }
 }
