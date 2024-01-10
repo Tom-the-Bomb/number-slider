@@ -124,10 +124,27 @@ public class App extends JPanel implements ActionListener {
             remove(gamePanel);
 
             try {
-                size = Integer.parseInt(
+                int newSize = Integer.parseInt(
                     sizeInput.getText()
                 );
-            } catch (NumberFormatException err) {}
+
+                if (newSize <= 0 || newSize > 20) {
+                    // Shows a message box like javascript's `alert(...)` in the web:
+                    //
+                    // <https://stackoverflow.com/questions/7080205/popup-message-boxes>
+                    //
+                    JOptionPane.showInternalMessageDialog(
+                        null, "Grid size must be between 0 and 20."
+                    );
+                    return;
+                }
+
+                size = newSize;
+            } catch (NumberFormatException err) {
+                JOptionPane.showInternalMessageDialog(
+                    null, "Invalid numerical value"
+                );
+            }
 
             movesLabel.setText("Moves: 0");
             gamePanel = new GamePanel(size, movesLabel, BG_COLOR);
