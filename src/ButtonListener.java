@@ -30,7 +30,7 @@ public class ButtonListener implements ComponentListener {
 
             // brute's force the ideal font-size for the text to fit within the button
             // keeps attempting while the current text's `width` and `height` are respectively
-            // still greater than the button's `width` and `height`
+            // still greater than 80% (margin space) of the button's `width` and `height`
             //
             // decrements font size by `1` each time.
             while (

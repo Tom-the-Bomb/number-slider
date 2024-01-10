@@ -6,34 +6,34 @@ import java.io.IOException;
 
 public class App extends JPanel implements ActionListener {
     private GamePanel gamePanel;
+    protected int size;
 
-    private JLabel movesLabel;
+    protected JLabel movesLabel;
     private JButton restart;
     private JLabel sizeLabel;
     private JTextField sizeInput;
-
-    private int size = 4;
 
     private static final int WIDTH = 600;
     private static final int HEIGHT = 800;
 
     private static final Color TITLE_COLOR = new Color(255, 255, 255);
-    private static final Color TEXT_COLOR = new Color(170, 255, 200);
-    private static final Color BG_COLOR = new Color(40, 50, 60);
+    protected static final Color TEXT_COLOR = new Color(170, 255, 200);
+    protected static final Color BG_COLOR = new Color(40, 50, 60);
 
     private final Font TITLE_FONT;
     private final Font CODE_FONT;
 
-    public App() throws FontFormatException, IOException {
+    public App(int defaultSize) throws FontFormatException, IOException {
         setBackground(BG_COLOR);
 
         TITLE_FONT = getFont("/fonts/BrownieStencil-vmrPE.ttf", 50);
         CODE_FONT = getFont("/fonts/FiraCodeNerdFont-Bold.ttf", 30);
 
+        size = defaultSize;
         movesLabel = new JLabel("Moves: 0");
         movesLabel.setFont(CODE_FONT);
         movesLabel.setForeground(TEXT_COLOR);
-        gamePanel = new GamePanel(size, movesLabel, BG_COLOR);
+        gamePanel = new GamePanel(this);
 
         GridBagLayout layout = new GridBagLayout();
         setLayout(layout);
@@ -54,14 +54,16 @@ public class App extends JPanel implements ActionListener {
         constraints.insets = new Insets(0, 50, 0, 50);
         // outer container around the game tiles
         // adds an even 100px margin around the entire game
-        // csizeLabelizes the game on the frame
+        // centerizes the game on the frame
         //
         // <https://stackoverflow.com/questions/30611975/giving-a-jpanel-a-percentage-based-width>
         //
         // Uses `GridBagLayout` to do so.
         add(gamePanel, constraints);
 
-        JPanel controls = new JPanel();
+        JPanel controls = new JPanel(
+            new GridLayout(1, 3)
+        );
         controls.setBackground(BG_COLOR);
 
         restart = new JButton("Restart");
@@ -148,7 +150,7 @@ public class App extends JPanel implements ActionListener {
             remove(gamePanel);
 
             movesLabel.setText("Moves: 0");
-            gamePanel = new GamePanel(size, movesLabel, BG_COLOR);
+            gamePanel = new GamePanel(this);
 
             GridBagConstraints constraints = getDefaultConstraints();
             constraints.gridy = 2;
@@ -163,7 +165,7 @@ public class App extends JPanel implements ActionListener {
 
     public static void main(String[] args) throws FontFormatException, IOException {
         JFrame frame = new JFrame("Number Slider");
-        App app = new App();
+        App app = new App(4);
 
         frame.setSize(WIDTH, HEIGHT);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

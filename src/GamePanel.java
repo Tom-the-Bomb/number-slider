@@ -5,29 +5,30 @@ import java.awt.event.*;
 import javax.swing.*;
 
 public class GamePanel extends JPanel implements ActionListener {
-    // the size of a singular dimension
-    private int size;
+    private App app;
+    // number of moves counter
     private int moves;
-    protected JLabel movesLabel;
 
     private int[] allNumbers;
     private int[][] board;
     private final int[][] COMPLETED;
 
+    // game tile background colors
     private static final Color CORRECT_COLOR = Color.GREEN;
     private static final Color ZERO_COLOR = Color.DARK_GRAY;
     private static final Color DEFAULT_COLOR = Color.GRAY;
+    // font colors
     private static final Color FONT_COLOR = Color.WHITE;
-
+    private static final Color WIN_COLOR = Color.YELLOW;
+    // font used on the game tiles (buttons)
     protected static final Font BUTTON_FONT = new Font("Verdana", Font.BOLD, 30);
 
-    public GamePanel(int size, JLabel movesLabel, Color background) {
-        this.size = size;
+    public GamePanel(App app) {
+        this.app = app;
         this.moves = 0;
-        this.movesLabel = movesLabel;
 
         // 1D array listing all the numbers present in the game
-        allNumbers = generateNumbers(size);
+        allNumbers = generateNumbers(app.size);
         // 2D array representing the current game state / board
         board = chunk(
             // append the empty tile (which will always start at the end of the board)
@@ -36,17 +37,17 @@ public class GamePanel extends JPanel implements ActionListener {
                 shuffle(allNumbers.clone()),
                 0
             ),
-            size
+            app.size
         );
         // a constant 2D array representing the game state when the game is solved
         // i.e. it is sorted (unshuffled)
         COMPLETED = chunk(
             pushBack(allNumbers, 0),
-            size
+            app.size
         );
 
-        setBackground(background);
-        setLayout(new GridLayout(size, size));
+        setBackground(App.BG_COLOR);
+        setLayout(new GridLayout(app.size, app.size));
 
         // setups the grid by adding all the buttons for the number matrix
         for (int i = 0; i < board.length; i++) {
@@ -65,6 +66,8 @@ public class GamePanel extends JPanel implements ActionListener {
             int[] neighbors = getBlankNeighbors();
             int num = Integer.parseInt(button.getText());
 
+            // click is only valid
+            // if the clicked number is beside the blank tile
             if (contains(neighbors, num)) {
                 // gets the indices of the tile with a value of `num`
                 Point pressedCoord = getTile(num);
@@ -77,7 +80,8 @@ public class GamePanel extends JPanel implements ActionListener {
                 board[blankCoord.x][blankCoord.y] = temp;
 
                 moves++;
-                movesLabel.setText("Moves: " + moves);
+                app.movesLabel.setText("Moves: " + moves);
+                app.movesLabel.setForeground(App.TEXT_COLOR);
 
                 updateButton(
                     (JButton) getComponents()[to1DIdx(pressedCoord)],
@@ -91,7 +95,8 @@ public class GamePanel extends JPanel implements ActionListener {
                 // the user's board equals the sorted/target end board `COMPLETED`
                 // meaning the user has finished the puzzle / has won
                 if (Arrays.deepEquals(board, COMPLETED)) {
-                    System.out.println("You've won!");
+                    app.movesLabel.setText("Congratulations! You've won in " + moves + " moves!");
+                    app.movesLabel.setForeground(WIN_COLOR);
                 }
             }
         }
@@ -100,7 +105,7 @@ public class GamePanel extends JPanel implements ActionListener {
     // converts a pair of (row, col) indices to a single index
     // that will index the same element when the matrix is flattened
     private int to1DIdx(Point indices) {
-        return indices.x * size + indices.y;
+        return indices.x * app.size + indices.y;
     }
 
     // creates a new `JButton` to be added to the `JPanel`
@@ -250,9 +255,9 @@ public class GamePanel extends JPanel implements ActionListener {
 
             if (
                 0 <= indices.x
-                && indices.x < size
+                && indices.x < app.size
                 && 0 <= indices.y
-                && indices.y < size
+                && indices.y < app.size
             ) {
                 neighbors[i] = board[indices.x][indices.y];
             }
