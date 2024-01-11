@@ -9,6 +9,7 @@ public class App extends JPanel implements ActionListener {
     protected int size;
 
     protected JLabel movesLabel;
+    private JButton help;
     private JButton restart;
     private JLabel sizeLabel;
     private JTextField sizeInput;
@@ -16,9 +17,13 @@ public class App extends JPanel implements ActionListener {
     private static final int WIDTH = 600;
     private static final int HEIGHT = 800;
 
+    // text colors
     private static final Color TITLE_COLOR = new Color(255, 255, 255);
-    protected static final Color TEXT_COLOR = new Color(170, 255, 200);
-    protected static final Color BG_COLOR = new Color(40, 50, 60);
+    protected static final Color LABEL_COLOR = new Color(170, 255, 200);
+    protected static final Color BG_COLOR = new Color(60, 60, 70);
+    // buttons colors
+    private static final Color SECONDARY_BTN_COLOR = new Color(90, 90, 100);
+    private static final Color DANGER_BTN_COLOR = Color.RED;
 
     private final Font TITLE_FONT;
     private final Font CODE_FONT;
@@ -32,7 +37,7 @@ public class App extends JPanel implements ActionListener {
         size = defaultSize;
         movesLabel = new JLabel("Moves: 0");
         movesLabel.setFont(CODE_FONT);
-        movesLabel.setForeground(TEXT_COLOR);
+        movesLabel.setForeground(LABEL_COLOR);
         gamePanel = new GamePanel(this);
 
         GridBagLayout layout = new GridBagLayout();
@@ -49,33 +54,29 @@ public class App extends JPanel implements ActionListener {
         constraints.gridy = 1;
         add(movesLabel, constraints);
 
-        constraints.gridy = 2;
-        constraints.fill = GridBagConstraints.BOTH;
-        constraints.insets = new Insets(0, 50, 0, 50);
-        // outer container around the game tiles
-        // adds an even 100px margin around the entire game
-        // centerizes the game on the frame
-        //
-        // <https://stackoverflow.com/questions/30611975/giving-a-jpanel-a-percentage-based-width>
-        //
-        // Uses `GridBagLayout` to do so.
-        add(gamePanel, constraints);
+        addGamePanel();
 
+        // controls sub-panel in the last row of the app
         JPanel controls = new JPanel(
-            new GridLayout(1, 3)
+            new GridLayout(1, 3, 10, 0)
         );
         controls.setBackground(BG_COLOR);
 
+        help = new JButton("Help");
+        help.setForeground(GamePanel.TEXT_COLOR);
+        help.setBackground(SECONDARY_BTN_COLOR);
+
         restart = new JButton("Restart");
-        restart.setForeground(Color.WHITE);
-        restart.setBackground(Color.RED);
+        restart.setForeground(GamePanel.TEXT_COLOR);
+        restart.setBackground(DANGER_BTN_COLOR);
 
         sizeInput = new JTextField(5);
 
         sizeLabel = new JLabel("    Grid Size:");
-        sizeLabel.setForeground(Color.WHITE);
+        sizeLabel.setForeground(GamePanel.TEXT_COLOR);
 
         for (JComponent component : new JComponent[] {
+            help,
             restart,
             sizeLabel,
             sizeInput,
@@ -88,7 +89,7 @@ public class App extends JPanel implements ActionListener {
             );
 
             if (component instanceof JButton) {
-                restart.addActionListener(this);
+                ((JButton) component).addActionListener(this);
             }
             controls.add(component);
         }
@@ -117,6 +118,24 @@ public class App extends JPanel implements ActionListener {
         constraints.weightx = 0.5;
         constraints.weighty = 0.5;
         return constraints;
+    }
+
+    // `app` is the outer container around the game tiles panel `gamePanel`
+    // adds `gamePanel` to `app` with proper positioning
+    //
+    // adds an even 100px margin around the entire game
+    // centerizes the game on the frame
+    //
+    // <https://stackoverflow.com/questions/30611975/giving-a-jpanel-a-percentage-based-width>
+    //
+    // `app` uses `GridBagLayout` to handle all this well.
+    private void addGamePanel() {
+        GridBagConstraints constraints = getDefaultConstraints();
+        constraints.gridy = 2;
+        constraints.fill = GridBagConstraints.BOTH;
+        constraints.insets = new Insets(0, 50, 0, 50);
+
+        add(gamePanel, constraints);
     }
 
     public void actionPerformed(ActionEvent event) {
@@ -152,14 +171,13 @@ public class App extends JPanel implements ActionListener {
             movesLabel.setText("Moves: 0");
             gamePanel = new GamePanel(this);
 
-            GridBagConstraints constraints = getDefaultConstraints();
-            constraints.gridy = 2;
-            constraints.fill = GridBagConstraints.BOTH;
-            constraints.insets = new Insets(0, 50, 0, 50);
-
-            add(gamePanel, constraints);
+            addGamePanel();
             revalidate();
             repaint();
+        } else if (component == help) {
+            remove(gamePanel);
+
+
         }
     }
 

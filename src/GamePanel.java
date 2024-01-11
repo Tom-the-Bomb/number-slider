@@ -22,7 +22,7 @@ public class GamePanel extends JPanel implements ActionListener {
     // game tile outline color
     private static final Color OUTLINE_COLOR = Color.BLACK;
     // font colors
-    private static final Color FONT_COLOR = Color.WHITE;
+    protected static final Color TEXT_COLOR = Color.WHITE;
     private static final Color WIN_COLOR = Color.YELLOW;
     // font used on the game tiles (buttons)
     protected static final Font BUTTON_FONT = new Font("Verdana", Font.BOLD, 30);
@@ -40,7 +40,7 @@ public class GamePanel extends JPanel implements ActionListener {
         // it takes the completed board matrix
         // and repeatedlyplays a series of random valid moves from there to shuffle it
         board = chunk(allNumbers, app.size);
-        shuffle(200);
+        shuffle((int) ((Math.random() * (1000 - 500)) + 500));
 
         setBackground(Color.BLACK);
         setLayout(new GridLayout(app.size, app.size));
@@ -73,7 +73,7 @@ public class GamePanel extends JPanel implements ActionListener {
                 // update move's counter and display
                 moves++;
                 app.movesLabel.setText("Moves: " + moves);
-                app.movesLabel.setForeground(App.TEXT_COLOR);
+                app.movesLabel.setForeground(App.LABEL_COLOR);
 
                 // updates the properties of the button that was clicked
                 updateButton(
@@ -108,7 +108,7 @@ public class GamePanel extends JPanel implements ActionListener {
         JButton button = new JButton();
         updateButton(button, i, j);
 
-        button.setForeground(FONT_COLOR);
+        button.setForeground(TEXT_COLOR);
         button.setFont(BUTTON_FONT);
         button.setBorder(
             BorderFactory.createLineBorder(OUTLINE_COLOR, 4)
