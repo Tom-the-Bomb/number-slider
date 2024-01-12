@@ -1,11 +1,11 @@
 import java.util.Arrays;
-import java.util.ArrayList;
 
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
-// panel displaying solely the game board's matrix of buttons
+// Panel displaying solely the game board's matrix of buttons
+//
 public class GamePanel extends JPanel implements ActionListener {
     // reference to the main app panel/wrapper panel
     private App app;
@@ -33,16 +33,31 @@ public class GamePanel extends JPanel implements ActionListener {
 
         // 1D array listing all the numbers present in the game
         int[] allNumbers = generateNumbers(app.size);
+
+        // clone so we do not ruin the order when creating `COMPLETED`
+        int[] clone = allNumbers.clone();
+        shuffle(clone);
+        // append the empty tile (which will always start at the end of the board)
+        // (append after shuffle so it is guaranteed to stay there)
+        int[] shuffledBoard = pushBack(clone, 0);
+
+        while (!isSolvable(shuffledBoard)) {
+            // keep reshuffling until the shuffled board is actually solvable
+            shuffle(clone);
+            shuffledBoard = pushBack(clone, 0);
+        }
+        // 2D array representing the current game state / board
+        // generated from random shuffling and ensuring it is always solvable
+        board = chunk(shuffledBoard, app.size);
+
         // a constant 2D array representing the game state when the game is solved
         // i.e. it is sorted (unshuffled)
-        COMPLETED = chunk(allNumbers, app.size);
-        // sets the starting game board
-        // it takes the completed board matrix
-        // and repeatedlyplays a series of random valid moves from there to shuffle it
-        board = chunk(allNumbers, app.size);
-        shuffle((int) ((Math.random() * (1000 - 500)) + 500));
+        COMPLETED = chunk(
+            pushBack(allNumbers, 0),
+            app.size
+        );
 
-        setBackground(Color.BLACK);
+        setBackground(OUTLINE_COLOR);
         setLayout(new GridLayout(app.size, app.size));
 
         // setups the grid by adding all the buttons for the number matrix
@@ -53,6 +68,8 @@ public class GamePanel extends JPanel implements ActionListener {
         }
     }
 
+    // handles move when the buttons are clicked
+    //
     public void actionPerformed(ActionEvent event) {
         Object component = event.getSource();
 
@@ -62,7 +79,7 @@ public class GamePanel extends JPanel implements ActionListener {
 
             // the click is only valid
             // if the clicked number is beside the blank tile
-            if (getBlankNeighbors().contains(num)) {
+            if (contains(getBlankNeighbors(), num)) {
                 // gets the indices of the tile with a value of `num`
                 Point pressedCoord = getTile(num);
                 // gets the indices of the `blank` tile
@@ -98,12 +115,25 @@ public class GamePanel extends JPanel implements ActionListener {
 
     // converts a pair of (row, col) indices to a single index
     // that will index the same element when the matrix is flattened
+    //
     private int to1DIdx(Point indices) {
         return indices.x * app.size + indices.y;
     }
 
+    // simple helper method to check if `target` in the array `arr`
+    //
+    private boolean contains(int[] arr, int target) {
+        for (int element : arr) {
+            if (element == target) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // creates a new `JButton` to be added to the `JPanel`
-    // with attributes like color, label etc.
+    // with required attributes like color, label etc.
+    //
     private JButton createButton(int i, int j) {
         JButton button = new JButton();
         updateButton(button, i, j);
@@ -125,6 +155,7 @@ public class GamePanel extends JPanel implements ActionListener {
     //     - whether or not the button is disabled (only if the tile is blank)
     //
     // `i` and `j` respectively are the row and column indices of the tile/button
+    //
     private void updateButton(JButton button, int i, int j) {
         int num = board[i][j];
 
@@ -146,12 +177,11 @@ public class GamePanel extends JPanel implements ActionListener {
     //
     private static int[] generateNumbers(int size) {
         int count = size * size;
-        int[] arr = new int[count];
+        int[] arr = new int[count - 1];
 
         for (int i = 1; i < count; i++) {
             arr[i - 1] = i;
         }
-        arr[count - 1] = 0;
         return arr;
     }
 
@@ -164,37 +194,73 @@ public class GamePanel extends JPanel implements ActionListener {
         board[blankCoord.x][blankCoord.y] = temp;
     }
 
-    // shuffles the completed array by simulating gameplay `count` number of moves
-    // sets up the starting game board
-    private void shuffle(int count) {
-        Point blankPressed = getTile(0);
+    // appends a single `element` to the back of an array: `arr`
+    //
+    private static int[] pushBack(int[] arr, int element) {
+        int[] copy = new int[arr.length + 1];
 
-        for (int i = 0; i < count; i++) {
-            // get all potential tiels we can move/swap/click
-            ArrayList<Integer> neighbors = getBlankNeighbors();
-
-            int idx = neighbors.indexOf(
-                // value of the previous move
-                board[blankPressed.x][blankPressed.y]
-            );
-            if (idx != -1) {
-                // if the previous MOVE is in our available moves
-                neighbors.remove(idx);
-            }
-
-            Point pressedCoord = getTile(
-                neighbors.get(
-                    (int) Math.random() * neighbors.size()
-                )
-            );
-            blankPressed = getTile(0);
-            swap(pressedCoord, blankPressed);
+        for (int i = 0; i < arr.length; i++) {
+            copy[i] = arr[i];
         }
+        copy[arr.length] = element;
+        return copy;
+    }
+
+    // randomly shuffles a 1 dimensional array *in-place* using the
+    // [Fish Yates Algorithm](https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle)
+    //
+    // generates random indices using `Math.random` that are in range of the array's length
+    // and then swaps the array's elements one by one with the randomly generated index.
+    //
+    private static void shuffle(int[] arr) {
+        for (int i = 0; i < arr.length; i++) {
+            int j = (int) (Math.random() * arr.length - 1) + 1;
+
+            int temp = arr[i];
+            arr[i] = arr[j];
+            arr[j] = temp;
+        }
+    }
+
+    // checks whether or not the randomly jumbled array is solvable
+    // if the number of `inversions` that has occured in the flattened board matrix is `even` it is solvable
+    // otherwise (if it is `odd` it is not
+    //
+    // an inversion is when there is a tile (`a`) that is situated before another (`b`) but a > b
+    // and therefore it is out of desired order, therefore it is inversed
+    //
+    // <https://math.stackexchange.com/questions/4064152/solvability-of-a-sliding-puzzle-of-size-nn>
+    //
+    private static boolean isSolvable(int[] flatBoard) {
+        int nInversions = 0;
+
+        // loop through/check all tiles
+        for (int i = 0; i < flatBoard.length; i++) {
+            // for each tile, also pair it up and loop through all tiles that are AFTER it
+            for (int j = i + 1; j < flatBoard.length; j++) {
+                // our first tile
+                int first = flatBoard[i];
+                // our second tile to compare to
+                int after = flatBoard[j];
+                if (
+                    // check if `first` and `after` are not blank tiles
+                    first != 0
+                    && after != 0
+                    // the first occuring tile is greater than the one after it
+                    // hence it is an `inversion` (as it is in reverse/descending order)
+                    && first > after
+                ) {
+                    nInversions++;
+                }
+            }
+        }
+        return nInversions % 2 == 0;
     }
 
     // chunks a 1 dimensional array
     // into a 2 dimensional array with row length's of `size`
-    // chunk([1, 2, 3, 4]), size=2 -> [[1, 2], [3, 4]]
+    // `chunk([1, 2, 3, 4]), size=2` -> `[[1, 2], [3, 4]]`
+    //
     private static int[][] chunk(int[] arr, int size) {
         int[][] chunked = new int[size][];
 
@@ -213,7 +279,8 @@ public class GamePanel extends JPanel implements ActionListener {
         return chunked;
     }
 
-    // returns the indices of the tile that has a label/value of `num`
+    // returns the indices as `Point(row, col)`
+    // of the tile that has a label/value of `num`
     //
     private Point getTile(int num) {
         for (int i = 0; i < board.length; i++) {
@@ -232,10 +299,10 @@ public class GamePanel extends JPanel implements ActionListener {
     // effectively are all the tiles that are able to be selected/moved
     //
     // ensures that the neighbor's are within the grid bounds.
-    private ArrayList<Integer> getBlankNeighbors() {
+    private int[] getBlankNeighbors() {
         Point empty = getTile(0);
 
-        ArrayList<Integer> neighbors = new ArrayList<Integer>();
+        int[] neighbors = new int[4];
         Point[] points = {
             new Point(empty.x - 1, empty.y),
             new Point(empty.x + 1, empty.y),
@@ -243,14 +310,16 @@ public class GamePanel extends JPanel implements ActionListener {
             new Point(empty.x, empty.y + 1),
         };
 
-        for (Point indices : points) {
+        for (int i = 0; i < points.length; i++) {
+            Point indices = points[i];
+
             if (
                 0 <= indices.x
                 && indices.x < app.size
                 && 0 <= indices.y
                 && indices.y < app.size
             ) {
-                neighbors.add(board[indices.x][indices.y]);
+                neighbors[i] = board[indices.x][indices.y];
             }
         }
         return neighbors;

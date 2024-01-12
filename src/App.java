@@ -14,6 +14,9 @@ public class App extends JPanel implements ActionListener {
     private JLabel sizeLabel;
     private JTextField sizeInput;
 
+    // help screen components
+    private JButton back;
+
     private static final int WIDTH = 600;
     private static final int HEIGHT = 800;
 
@@ -40,6 +43,15 @@ public class App extends JPanel implements ActionListener {
         movesLabel.setForeground(LABEL_COLOR);
         gamePanel = new GamePanel(this);
 
+        setupComponents();
+
+        back = new JButton("Back");
+        back.setForeground(GamePanel.TEXT_COLOR);
+        back.setBackground(SECONDARY_BTN_COLOR);
+        setupComponentProperties(back);
+    }
+
+    private void setupComponents() {
         GridBagLayout layout = new GridBagLayout();
         setLayout(layout);
         GridBagConstraints constraints = getDefaultConstraints();
@@ -56,9 +68,10 @@ public class App extends JPanel implements ActionListener {
 
         addGamePanel();
 
-        // controls sub-panel in the last row of the app
-        JPanel controls = new JPanel(
-            new GridLayout(1, 3, 10, 0)
+        // the `controls` sub-panel in the last row of the app
+        JPanel controls = new JPanel();
+        controls.setLayout(
+            new GridLayout(0, 3, 10, 10)
         );
         controls.setBackground(BG_COLOR);
 
@@ -76,21 +89,12 @@ public class App extends JPanel implements ActionListener {
         sizeLabel.setForeground(GamePanel.TEXT_COLOR);
 
         for (JComponent component : new JComponent[] {
-            help,
             restart,
             sizeLabel,
             sizeInput,
+            help,
         }) {
-            component.setBorder(
-                BorderFactory.createEmptyBorder(10, 10, 10, 10)
-            );
-            component.setFont(
-                CODE_FONT.deriveFont(Font.PLAIN, 20)
-            );
-
-            if (component instanceof JButton) {
-                ((JButton) component).addActionListener(this);
-            }
+            setupComponentProperties(component);
             controls.add(component);
         }
 
@@ -99,6 +103,22 @@ public class App extends JPanel implements ActionListener {
         constraints.fill = GridBagConstraints.NONE;
 
         add(controls, constraints);
+    }
+
+    // setups some default (repetitive) component properties
+    // such as font, color, listener etc.
+    //
+    private void setupComponentProperties(JComponent component) {
+        component.setBorder(
+            BorderFactory.createEmptyBorder(10, 10, 10, 10)
+        );
+        component.setFont(
+            CODE_FONT.deriveFont(20f)
+        );
+
+        if (component instanceof JButton) {
+            ((JButton) component).addActionListener(this);
+        }
     }
 
     // loads in a custom font file (.ttf) as a `Font`:
@@ -112,6 +132,9 @@ public class App extends JPanel implements ActionListener {
         ).deriveFont((float) size);
     }
 
+    // returns an instance of `GridBagConstraints`
+    // with default values for the properties that we desire for our panel
+    //
     private GridBagConstraints getDefaultConstraints() {
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.anchor = GridBagConstraints.CENTER;
@@ -170,24 +193,91 @@ public class App extends JPanel implements ActionListener {
 
             movesLabel.setText("Moves: 0");
             gamePanel = new GamePanel(this);
-
             addGamePanel();
-            revalidate();
-            repaint();
+
         } else if (component == help) {
-            remove(gamePanel);
+            removeAll();
 
+            JLabel title = new JLabel("How to Play");
+            title.setFont(TITLE_FONT);
+            title.setForeground(GamePanel.TEXT_COLOR);
+            title.setHorizontalAlignment(JLabel.CENTER);
 
+            GridBagConstraints constraints = getDefaultConstraints();
+
+            constraints.gridy = 0;
+            add(title, constraints);
+
+            JTextPane description = new JTextPane();
+            description.setContentType("text/html");
+            description.setEditable(false);
+            description.setText(
+                String.format(
+                    """
+                    <html>
+                        <div style="
+                            color: rgb(%d, %d, %d);
+                            font-size: 20pt;
+                            font-weight: 200;
+                        ">
+                            <pre>
+                    The goal of the game is to sort all the tiles in ascending order.
+
+                    The desired endgame layout is to have the top-left corner be a <b>[1]</b>
+                    and in <b>ascending</b> order all the way to the bottom-left which should be the <b>[largest number]</b>
+
+                    The dark gray tile represents the <b>empty</b> tile that it's neighbors can move to.
+                    Therefore, only the direct <b>neighbors</b> of that tile can be <b>clicked</b>
+                    and said tile will get <b>swapped</b> with the blank tile when <b>clicked</b>
+                            </pre>
+                            <hr>
+                            <pre>
+                    Click <b>[Restart]</b> to generate a random fresh board (and to update grid size value)
+
+                    Enter <b>[Grid Size]</b> (number from 1 to 20) to change the dimensions of the grid
+                    (By default the grid size is 4)
+                            </pre>
+                        </div>
+                    </html>
+                    """,
+                    LABEL_COLOR.getRed(),
+                    LABEL_COLOR.getGreen(),
+                    LABEL_COLOR.getRed()
+                )
+            );
+            description.setOpaque(false);
+
+            constraints.gridy = 1;
+            constraints.fill = GridBagConstraints.NONE;
+            add(description, constraints);
+
+            constraints.gridy = 2;
+            add(back, constraints);
+
+        } else if (component == back) {
+            removeAll();
+            setupComponents();
+
+        } else {
+            return;
         }
+
+        revalidate();
+        repaint();
     }
 
     public static void main(String[] args) throws FontFormatException, IOException {
         JFrame frame = new JFrame("Number Slider");
-        App app = new App(4);
 
         frame.setSize(WIDTH, HEIGHT);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.add(app);
+        frame.add(
+            new JScrollPane(
+                new App(4),
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED
+            )
+        );
         frame.setVisible(true);
     }
 }
