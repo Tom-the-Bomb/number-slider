@@ -32,7 +32,7 @@ public class GamePanel extends JPanel implements ActionListener {
         moves = 0;
 
         // 1D array listing all the numbers present in the game
-        int[] allNumbers = generateNumbers(app.size);
+        int[] allNumbers = generateNumbers(app.rows, app.cols);
 
         // clone so we do not ruin the order when creating `COMPLETED`
         int[] clone = allNumbers.clone();
@@ -48,17 +48,20 @@ public class GamePanel extends JPanel implements ActionListener {
         }
         // 2D array representing the current game state / board
         // generated from random shuffling and ensuring it is always solvable
-        board = chunk(shuffledBoard, app.size);
+        board = chunk(shuffledBoard, app.rows, app.cols);
 
         // a constant 2D array representing the game state when the game is solved
         // i.e. it is sorted (unshuffled)
         COMPLETED = chunk(
             pushBack(allNumbers, 0),
-            app.size
+            app.rows,
+            app.cols
         );
 
         setBackground(OUTLINE_COLOR);
-        setLayout(new GridLayout(app.size, app.size));
+        // sets the layout of a panel to be a grid layout
+        // increases responsiveness, (row x cols sized grid)
+        setLayout(new GridLayout(app.rows, app.cols));
 
         // setups the grid by adding all the buttons for the number matrix
         for (int i = 0; i < board.length; i++) {
@@ -117,7 +120,7 @@ public class GamePanel extends JPanel implements ActionListener {
     // that will index the same element when the matrix is flattened
     //
     private int to1DIdx(Point indices) {
-        return indices.x * app.size + indices.y;
+        return indices.x * app.cols + indices.y;
     }
 
     // simple helper method to check if `target` in the array `arr`
@@ -175,8 +178,8 @@ public class GamePanel extends JPanel implements ActionListener {
     // generates the array of numbers that will be used
     // within the interval [i, size^2]
     //
-    private static int[] generateNumbers(int size) {
-        int count = size * size;
+    private static int[] generateNumbers(int rows, int cols) {
+        int count = rows * cols;
         int[] arr = new int[count - 1];
 
         for (int i = 1; i < count; i++) {
@@ -259,19 +262,19 @@ public class GamePanel extends JPanel implements ActionListener {
 
     // chunks a 1 dimensional array
     // into a 2 dimensional array with row length's of `size`
-    // `chunk([1, 2, 3, 4]), size=2` -> `[[1, 2], [3, 4]]`
+    // `chunk([1, 2, 3, 4, 5, 6], size=2)` -> `[[1, 2], [3, 4], [5, 6]]`
     //
-    private static int[][] chunk(int[] arr, int size) {
-        int[][] chunked = new int[size][];
+    private static int[][] chunk(int[] arr, int rows, int cols) {
+        int[][] chunked = new int[rows][cols];
 
         for (
             int i = 0, idx = 0;
             i < arr.length;
-            i += size, idx++
+            i += cols, idx++
         ) {
-            int[] chunk = new int[size];
+            int[] chunk = new int[cols];
 
-            for (int j = i; j < i + size; j++) {
+            for (int j = i; j < i + cols; j++) {
                 chunk[j - i] = arr[j];
             }
             chunked[idx] = chunk;
@@ -315,9 +318,9 @@ public class GamePanel extends JPanel implements ActionListener {
 
             if (
                 0 <= indices.x
-                && indices.x < app.size
+                && indices.x < board.length
                 && 0 <= indices.y
-                && indices.y < app.size
+                && indices.y < board[0].length
             ) {
                 neighbors[i] = board[indices.x][indices.y];
             }

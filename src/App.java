@@ -6,17 +6,25 @@ import java.io.IOException;
 
 public class App extends JPanel implements ActionListener {
     private GamePanel gamePanel;
-    protected int size;
+    // number of rows and columns of the game board grid
+    protected int rows;
+    protected int cols;
 
     protected JLabel movesLabel;
+    // inputs for setting the number of rows and columns
+    private JLabel rowsLabel;
+    private JTextField rowsInput;
+    private JLabel colsLabel;
+    private JTextField colsInput;
+
+    // help and restart buttons
     private JButton help;
     private JButton restart;
-    private JLabel sizeLabel;
-    private JTextField sizeInput;
 
     // help screen components
     private JButton back;
 
+    // starting dimensions of the frame
     private static final int WIDTH = 600;
     private static final int HEIGHT = 800;
 
@@ -27,17 +35,19 @@ public class App extends JPanel implements ActionListener {
     // buttons colors
     private static final Color SECONDARY_BTN_COLOR = new Color(90, 90, 100);
     private static final Color DANGER_BTN_COLOR = Color.RED;
-
+    // fonts
     private final Font TITLE_FONT;
     private final Font CODE_FONT;
 
-    public App(int defaultSize) throws FontFormatException, IOException {
+    public App(int rows, int cols) throws FontFormatException, IOException {
+        this.rows = rows;
+        this.cols = cols;
+
         setBackground(BG_COLOR);
 
         TITLE_FONT = getFont("/fonts/BrownieStencil-vmrPE.ttf", 50);
         CODE_FONT = getFont("/fonts/FiraCodeNerdFont-Bold.ttf", 30);
 
-        size = defaultSize;
         movesLabel = new JLabel("Moves: 0");
         movesLabel.setFont(CODE_FONT);
         movesLabel.setForeground(LABEL_COLOR);
@@ -71,7 +81,7 @@ public class App extends JPanel implements ActionListener {
         // the `controls` sub-panel in the last row of the app
         JPanel controls = new JPanel();
         controls.setLayout(
-            new GridLayout(0, 3, 10, 10)
+            new GridLayout(0, 4, 10, 10)
         );
         controls.setBackground(BG_COLOR);
 
@@ -83,15 +93,21 @@ public class App extends JPanel implements ActionListener {
         restart.setForeground(GamePanel.TEXT_COLOR);
         restart.setBackground(DANGER_BTN_COLOR);
 
-        sizeInput = new JTextField(5);
+        rowsInput = new JTextField(5);
+        colsInput = new JTextField(5);
 
-        sizeLabel = new JLabel("    Grid Size:");
-        sizeLabel.setForeground(GamePanel.TEXT_COLOR);
+        rowsLabel = new JLabel("    # Rows:");
+        colsLabel = new JLabel("    # Cols:");
+
+        rowsLabel.setForeground(GamePanel.TEXT_COLOR);
+        colsLabel.setForeground(GamePanel.TEXT_COLOR);
 
         for (JComponent component : new JComponent[] {
+            rowsLabel,
+            rowsInput,
+            colsLabel,
+            colsInput,
             restart,
-            sizeLabel,
-            sizeInput,
             help,
         }) {
             setupComponentProperties(component);
@@ -166,26 +182,38 @@ public class App extends JPanel implements ActionListener {
 
         if (component == restart) {
             try {
-                String val = sizeInput.getText();
-                if (!val.isEmpty()) {
-                    int newSize = Integer.parseInt(val);
+                String rawRows = rowsInput.getText();
+                String rawCols = colsInput.getText();
 
-                    if (newSize < 2 || newSize > 20) {
+                if (!rawRows.isEmpty() ) {
+                    int newRows = Integer.parseInt(rawRows);
+
+                    if (newRows < 2 || newRows > 20) {
                         // Shows a message box like javascript's `alert(...)` in the web:
                         //
                         // <https://stackoverflow.com/questions/7080205/popup-message-boxes>
                         //
                         JOptionPane.showInternalMessageDialog(
-                            null, "Grid size must be between 2 and 20."
+                            null, "The number of rows must be between 2 and 20."
                         );
                         return;
                     }
+                    rows = newRows;
+                }
+                if (!rawCols.isEmpty() ) {
+                    int newCols = Integer.parseInt(rawCols);
 
-                    size = newSize;
+                    if (newCols < 2 || newCols > 20) {
+                        JOptionPane.showInternalMessageDialog(
+                            null, "The number of columns must be between 2 and 20."
+                        );
+                        return;
+                    }
+                    cols = newCols;
                 }
             } catch (NumberFormatException err) {
                 JOptionPane.showInternalMessageDialog(
-                    null, "Invalid numerical value"
+                    null, "Invalid numerical input value"
                 );
                 return;
             }
@@ -273,7 +301,7 @@ public class App extends JPanel implements ActionListener {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.add(
             new JScrollPane(
-                new App(4),
+                new App(4, 4),
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED
             )
