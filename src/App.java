@@ -28,6 +28,11 @@ public class App extends JPanel implements ActionListener {
     private static final int WIDTH = 600;
     private static final int HEIGHT = 800;
 
+    // size constraint constants (inclusive)
+    // i.e. maximum & minimum number of rows & columns allowed
+    private static final int MIN_DIMS = 2;
+    private static final int MAX_DIMS = 30;
+
     // text colors
     private static final Color TITLE_COLOR = new Color(255, 255, 255);
     protected static final Color LABEL_COLOR = new Color(170, 255, 200);
@@ -35,7 +40,8 @@ public class App extends JPanel implements ActionListener {
     // buttons colors
     private static final Color SECONDARY_BTN_COLOR = new Color(90, 90, 100);
     private static final Color DANGER_BTN_COLOR = Color.RED;
-    // fonts
+
+    // custom fonts that require loading in constructor
     private final Font TITLE_FONT;
     private final Font CODE_FONT;
 
@@ -61,6 +67,8 @@ public class App extends JPanel implements ActionListener {
         setupComponentProperties(back);
     }
 
+    // creates and adds all the default home/game screen components
+    //
     private void setupComponents() {
         GridBagLayout layout = new GridBagLayout();
         setLayout(layout);
@@ -81,7 +89,7 @@ public class App extends JPanel implements ActionListener {
         // the `controls` sub-panel in the last row of the app
         JPanel controls = new JPanel();
         controls.setLayout(
-            new GridLayout(0, 4, 10, 10)
+            new GridLayout(0, 3, 10, 10)
         );
         controls.setBackground(BG_COLOR);
 
@@ -103,12 +111,12 @@ public class App extends JPanel implements ActionListener {
         colsLabel.setForeground(GamePanel.TEXT_COLOR);
 
         for (JComponent component : new JComponent[] {
+            help,
             rowsLabel,
             rowsInput,
+            restart,
             colsLabel,
             colsInput,
-            restart,
-            help,
         }) {
             setupComponentProperties(component);
             controls.add(component);
@@ -177,6 +185,28 @@ public class App extends JPanel implements ActionListener {
         add(gamePanel, constraints);
     }
 
+    // validates the inputs of the `row` and `cols`
+    // ensuring they are not less than `MIN_DIMS` or greater than `MAX_DIM`
+    // displaying a message box if they are
+    //
+    public boolean validateInput(int newSize) {
+        if (newSize < MIN_DIMS || newSize > MAX_DIMS) {
+            // Shows a message box like javascript's `alert(...)` in the web:
+            //
+            // <https://stackoverflow.com/questions/7080205/popup-message-boxes>
+            //
+            JOptionPane.showInternalMessageDialog(
+                null,
+                String.format("The number of rows must be between %d and %d.",
+                    MIN_DIMS,
+                    MAX_DIMS
+                )
+            );
+            return false;
+        }
+        return true;
+    }
+
     public void actionPerformed(ActionEvent event) {
         Object component = event.getSource();
 
@@ -187,26 +217,14 @@ public class App extends JPanel implements ActionListener {
 
                 if (!rawRows.isEmpty() ) {
                     int newRows = Integer.parseInt(rawRows);
-
-                    if (newRows < 2 || newRows > 20) {
-                        // Shows a message box like javascript's `alert(...)` in the web:
-                        //
-                        // <https://stackoverflow.com/questions/7080205/popup-message-boxes>
-                        //
-                        JOptionPane.showInternalMessageDialog(
-                            null, "The number of rows must be between 2 and 20."
-                        );
+                    if (!validateInput(newRows)) {
                         return;
                     }
                     rows = newRows;
                 }
                 if (!rawCols.isEmpty() ) {
                     int newCols = Integer.parseInt(rawCols);
-
-                    if (newCols < 2 || newCols > 20) {
-                        JOptionPane.showInternalMessageDialog(
-                            null, "The number of columns must be between 2 and 20."
-                        );
+                    if (!validateInput(newCols)) {
                         return;
                     }
                     cols = newCols;

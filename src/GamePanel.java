@@ -1,4 +1,8 @@
 import java.util.Arrays;
+import java.util.ArrayList;
+
+import java.time.Instant;
+import java.time.Duration;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -14,6 +18,11 @@ public class GamePanel extends JPanel implements ActionListener {
 
     private int[][] board;
     private final int[][] COMPLETED;
+
+    // an instant representing the time when the first tile was clicked (first move)
+    private Instant startTime;
+    // a duration representing the difference between `startTime` and the instant when the user has completed the puzzle
+    private Duration timeTaken;
 
     // game tile background colors
     private static final Color CORRECT_COLOR = new Color(60, 255, 80);
@@ -34,29 +43,17 @@ public class GamePanel extends JPanel implements ActionListener {
         // 1D array listing all the numbers present in the game
         int[] allNumbers = generateNumbers(app.rows, app.cols);
 
-        // clone so we do not ruin the order when creating `COMPLETED`
-        int[] clone = allNumbers.clone();
-        shuffle(clone);
-        // append the empty tile (which will always start at the end of the board)
-        // (append after shuffle so it is guaranteed to stay there)
-        int[] shuffledBoard = pushBack(clone, 0);
-
-        while (!isSolvable(shuffledBoard)) {
-            // keep reshuffling until the shuffled board is actually solvable
-            shuffle(clone);
-            shuffledBoard = pushBack(clone, 0);
-        }
-        // 2D array representing the current game state / board
-        // generated from random shuffling and ensuring it is always solvable
-        board = chunk(shuffledBoard, app.rows, app.cols);
-
         // a constant 2D array representing the game state when the game is solved
         // i.e. it is sorted (unshuffled)
-        COMPLETED = chunk(
-            pushBack(allNumbers, 0),
-            app.rows,
-            app.cols
-        );
+        COMPLETED = chunk(allNumbers);
+
+        // 2D array representing the current game state / board
+        // generated from shuffling the end-goal sorted array and playng valid moves randomly backwards.
+        //
+        // re-evaluates the chunking as `shuffle` modifies in-place so we do not want to end up modifying `COMPLETED` too
+        board = chunk(allNumbers);
+        // shuffles a random amount of times/moves between `[500, 700]`
+        shuffle((int) Math.pow(app.rows * app.cols, 2));
 
         setBackground(OUTLINE_COLOR);
         // sets the layout of a panel to be a grid layout
@@ -82,7 +79,11 @@ public class GamePanel extends JPanel implements ActionListener {
 
             // the click is only valid
             // if the clicked number is beside the blank tile
-            if (contains(getBlankNeighbors(), num)) {
+            if (getBlankNeighbors().contains(num)) {
+                if (moves == 0) {
+                    startTime = Instant.now();
+                }
+
                 // gets the indices of the tile with a value of `num`
                 Point pressedCoord = getTile(num);
                 // gets the indices of the `blank` tile
@@ -109,11 +110,43 @@ public class GamePanel extends JPanel implements ActionListener {
                 // the user's board equals the sorted/target end board `COMPLETED`
                 // meaning the user has finished the puzzle / has won
                 if (Arrays.deepEquals(board, COMPLETED)) {
-                    app.movesLabel.setText("Congratulations! You've won in " + moves + " moves!");
+                    timeTaken = Duration.between(startTime, Instant.now());
+
+                    app.movesLabel.setText(String.format(
+                        "Congratulations! You've won in %d moves, taking %s",
+                        moves,
+                        humanizeDuration(timeTaken)
+                    ));
                     app.movesLabel.setForeground(WIN_COLOR);
                 }
             }
         }
+    }
+
+    // formats a `Duration` properly, displaying it in a non redundant (zero values ommited) manner
+    // and in a human-readable format
+    //
+    private static String humanizeDuration(Duration duration) {
+        String formatted = "";
+
+        long days = duration.toDays();
+        int hours = duration.toHoursPart();
+        int minutes = duration.toMinutesPart();
+        int seconds = duration.toSecondsPart();
+
+        if (days > 0) {
+            formatted = String.format("%dd %s", days, formatted);
+        }
+        if (hours > 0) {
+            formatted = String.format("%dh %s", hours, formatted);
+        }
+        if (minutes > 0) {
+            formatted = String.format("%dm %s", minutes, formatted);
+        }
+        if (seconds > 0) {
+            formatted = String.format("%ds %s", seconds, formatted);
+        }
+        return formatted;
     }
 
     // converts a pair of (row, col) indices to a single index
@@ -121,17 +154,6 @@ public class GamePanel extends JPanel implements ActionListener {
     //
     private int to1DIdx(Point indices) {
         return indices.x * app.cols + indices.y;
-    }
-
-    // simple helper method to check if `target` in the array `arr`
-    //
-    private boolean contains(int[] arr, int target) {
-        for (int element : arr) {
-            if (element == target) {
-                return true;
-            }
-        }
-        return false;
     }
 
     // creates a new `JButton` to be added to the `JPanel`
@@ -180,11 +202,12 @@ public class GamePanel extends JPanel implements ActionListener {
     //
     private static int[] generateNumbers(int rows, int cols) {
         int count = rows * cols;
-        int[] arr = new int[count - 1];
+        int[] arr = new int[count];
 
         for (int i = 1; i < count; i++) {
             arr[i - 1] = i;
         }
+        arr[arr.length - 1] = 0;
         return arr;
     }
 
@@ -197,84 +220,47 @@ public class GamePanel extends JPanel implements ActionListener {
         board[blankCoord.x][blankCoord.y] = temp;
     }
 
-    // appends a single `element` to the back of an array: `arr`
+    // method to aid in generate the starting grid configuration
+    // by randomly performing valid moves starting with the solved grid configuration
     //
-    private static int[] pushBack(int[] arr, int element) {
-        int[] copy = new int[arr.length + 1];
+    // performs `count` number of moves backwrads to generate a random configuration
+    //
+    private void shuffle(int count) {
+        Point blank = getTile(0);
 
-        for (int i = 0; i < arr.length; i++) {
-            copy[i] = arr[i];
-        }
-        copy[arr.length] = element;
-        return copy;
-    }
+        for (int i = 0; i < count; i++) {
+            ArrayList<Integer> neighbors = getBlankNeighbors();
+            int idxToRemove = neighbors.indexOf(
+                board[blank.x][blank.y]
+            );
 
-    // randomly shuffles a 1 dimensional array *in-place* using the
-    // [Fish Yates Algorithm](https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle)
-    //
-    // generates random indices using `Math.random` that are in range of the array's length
-    // and then swaps the array's elements one by one with the randomly generated index.
-    //
-    private static void shuffle(int[] arr) {
-        for (int i = 0; i < arr.length; i++) {
-            int j = (int) (Math.random() * arr.length - 1) + 1;
-
-            int temp = arr[i];
-            arr[i] = arr[j];
-            arr[j] = temp;
-        }
-    }
-
-    // checks whether or not the randomly jumbled array is solvable
-    // if the number of `inversions` that has occured in the flattened board matrix is `even` it is solvable
-    // otherwise (if it is `odd` it is not
-    //
-    // an inversion is when there is a tile (`a`) that is situated before another (`b`) but a > b
-    // and therefore it is out of desired order, therefore it is inversed
-    //
-    // <https://math.stackexchange.com/questions/4064152/solvability-of-a-sliding-puzzle-of-size-nn>
-    //
-    private static boolean isSolvable(int[] flatBoard) {
-        int nInversions = 0;
-
-        // loop through/check all tiles
-        for (int i = 0; i < flatBoard.length; i++) {
-            // for each tile, also pair it up and loop through all tiles that are AFTER it
-            for (int j = i + 1; j < flatBoard.length; j++) {
-                // our first tile
-                int first = flatBoard[i];
-                // our second tile to compare to
-                int after = flatBoard[j];
-                if (
-                    // check if `first` and `after` are not blank tiles
-                    first != 0
-                    && after != 0
-                    // the first occuring tile is greater than the one after it
-                    // hence it is an `inversion` (as it is in reverse/descending order)
-                    && first > after
-                ) {
-                    nInversions++;
-                }
+            if (idxToRemove != -1) {
+                neighbors.remove(idxToRemove);
             }
+
+            int move = neighbors.get(
+                (int) (Math.random() * neighbors.size())
+            );
+            blank = getTile(0);
+            swap(getTile(move), blank);
         }
-        return nInversions % 2 == 0;
     }
 
     // chunks a 1 dimensional array
     // into a 2 dimensional array with row length's of `size`
     // `chunk([1, 2, 3, 4, 5, 6], size=2)` -> `[[1, 2], [3, 4], [5, 6]]`
     //
-    private static int[][] chunk(int[] arr, int rows, int cols) {
-        int[][] chunked = new int[rows][cols];
+    private int[][] chunk(int[] arr) {
+        int[][] chunked = new int[app.rows][app.cols];
 
         for (
             int i = 0, idx = 0;
             i < arr.length;
-            i += cols, idx++
+            i += app.cols, idx++
         ) {
-            int[] chunk = new int[cols];
+            int[] chunk = new int[app.cols];
 
-            for (int j = i; j < i + cols; j++) {
+            for (int j = i; j < i + app.cols; j++) {
                 chunk[j - i] = arr[j];
             }
             chunked[idx] = chunk;
@@ -302,10 +288,14 @@ public class GamePanel extends JPanel implements ActionListener {
     // effectively are all the tiles that are able to be selected/moved
     //
     // ensures that the neighbor's are within the grid bounds.
-    private int[] getBlankNeighbors() {
+    //
+    // uses an `ArrayList<Integer>` instead of `int[]` as there may not always be 4 neighbors,
+    // as some may be out of bounds
+    //
+    private ArrayList<Integer> getBlankNeighbors() {
         Point empty = getTile(0);
 
-        int[] neighbors = new int[4];
+        ArrayList<Integer> neighbors = new ArrayList<>();
         Point[] points = {
             new Point(empty.x - 1, empty.y),
             new Point(empty.x + 1, empty.y),
@@ -313,16 +303,14 @@ public class GamePanel extends JPanel implements ActionListener {
             new Point(empty.x, empty.y + 1),
         };
 
-        for (int i = 0; i < points.length; i++) {
-            Point indices = points[i];
-
+        for (Point indices: points) {
             if (
                 0 <= indices.x
                 && indices.x < board.length
                 && 0 <= indices.y
                 && indices.y < board[0].length
             ) {
-                neighbors[i] = board[indices.x][indices.y];
+                neighbors.add(board[indices.x][indices.y]);
             }
         }
         return neighbors;
