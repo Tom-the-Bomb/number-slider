@@ -143,6 +143,9 @@ public class App extends JPanel implements ActionListener {
         if (component instanceof JButton) {
             ((JButton) component).addActionListener(this);
         }
+        if (component instanceof JTextField) {
+            ((JTextField) component).addActionListener(this);
+        }
     }
 
     // loads in a custom font file (.ttf) as a `Font`:
@@ -210,7 +213,11 @@ public class App extends JPanel implements ActionListener {
     public void actionPerformed(ActionEvent event) {
         Object component = event.getSource();
 
-        if (component == restart) {
+        if (
+            component == restart
+            || (component == rowsInput && !rowsInput.getText().isEmpty())
+            || (component == colsInput && !colsInput.getText().isEmpty())
+        ) {
             try {
                 String rawRows = rowsInput.getText();
                 String rawCols = colsInput.getText();
@@ -272,23 +279,32 @@ public class App extends JPanel implements ActionListener {
                     The desired endgame layout is to have the top-left corner be a <b>[1]</b>
                     and in <b>ascending</b> order all the way to the bottom-left which should be the <b>[largest number]</b>
 
-                    The dark gray tile represents the <b>empty</b> tile that it's neighbors can move to.
+                    The dark gray tile represents the <b>empty</b> tile that its neighbors can swap to.
                     Therefore, only the direct <b>neighbors</b> of that tile can be <b>clicked</b>
                     and said tile will get <b>swapped</b> with the blank tile when <b>clicked</b>
+
+                    <b>Note:</b> All tiles that are in the <b>correct</b> position will be colored <b>green</b> instead
                             </pre>
                             <hr>
                             <pre>
-                    Click <b>[Restart]</b> to generate a random fresh board (and to update grid size value)
+                    Click <b>[Restart]</b> to generate a random fresh board (and to update grid size values)
 
-                    Enter <b>[Grid Size]</b> (number from 1 to 20) to change the dimensions of the grid
-                    (By default the grid size is 4)
+                    Enter <b>[# Rows]</b> (number from %d to %d) to change the number of rows of the grid
+                    Enter <b>[# Cols]</b> (number from %d to %d) to change number of columns of the grid
+                    (By default the grid size is <b>4x4</b>)
+
+                    <i>* All generated puzzles are guaranteed solvable</i>
+
+                    <b>Have Fun!</b>
                             </pre>
                         </div>
                     </html>
                     """,
                     LABEL_COLOR.getRed(),
                     LABEL_COLOR.getGreen(),
-                    LABEL_COLOR.getRed()
+                    LABEL_COLOR.getRed(),
+                    MIN_DIMS, MAX_DIMS,
+                    MIN_DIMS, MAX_DIMS
                 )
             );
             description.setOpaque(false);

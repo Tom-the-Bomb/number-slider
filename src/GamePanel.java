@@ -110,6 +110,10 @@ public class GamePanel extends JPanel implements ActionListener {
                 // the user's board equals the sorted/target end board `COMPLETED`
                 // meaning the user has finished the puzzle / has won
                 if (Arrays.deepEquals(board, COMPLETED)) {
+                    // calculates time taken for the user to solve the current puzzle
+                    //
+                    // <https://stackoverflow.com/questions/1555262/calculating-the-difference-between-two-java-date-instances>
+                    //
                     timeTaken = Duration.between(startTime, Instant.now());
 
                     app.movesLabel.setText(String.format(
@@ -135,18 +139,18 @@ public class GamePanel extends JPanel implements ActionListener {
         int seconds = duration.toSecondsPart();
 
         if (days > 0) {
-            formatted = String.format("%dd %s", days, formatted);
+            formatted = String.format("%s %dd", days, formatted);
         }
         if (hours > 0) {
-            formatted = String.format("%dh %s", hours, formatted);
+            formatted = String.format("%s %dh", hours, formatted);
         }
         if (minutes > 0) {
-            formatted = String.format("%dm %s", minutes, formatted);
+            formatted = String.format("%s %dm", minutes, formatted);
         }
         if (seconds > 0) {
-            formatted = String.format("%ds %s", seconds, formatted);
+            formatted = String.format("%s %ds", seconds, formatted);
         }
-        return formatted;
+        return "[" + formatted + "]";
     }
 
     // converts a pair of (row, col) indices to a single index
