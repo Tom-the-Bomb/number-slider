@@ -139,18 +139,18 @@ public class GamePanel extends JPanel implements ActionListener {
         int seconds = duration.toSecondsPart();
 
         if (days > 0) {
-            formatted = String.format("%s %dd", days, formatted);
+            formatted += String.format(" %dd", days);
         }
         if (hours > 0) {
-            formatted = String.format("%s %dh", hours, formatted);
+            formatted += String.format(" %dh", hours);
         }
         if (minutes > 0) {
-            formatted = String.format("%s %dm", minutes, formatted);
+            formatted += String.format(" %dm", minutes);
         }
         if (seconds > 0) {
-            formatted = String.format("%s %ds", seconds, formatted);
+            formatted += String.format(" %ds", seconds);
         }
-        return "[" + formatted + "]";
+        return "[" + formatted.strip() + "]";
     }
 
     // converts a pair of (row, col) indices to a single index
