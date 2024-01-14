@@ -202,7 +202,7 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     // generates the array of numbers that will be used
-    // within the interval [i, size^2]
+    // within the interval [1, rows * cols) (+ a `0` at the end)
     //
     private static int[] generateNumbers(int rows, int cols) {
         int count = rows * cols;
@@ -283,8 +283,10 @@ public class GamePanel extends JPanel implements ActionListener {
                 }
             }
         }
-        // not found but this should not be reached
-        // if `num` is in the interval: `[0, size^2]`
+        // returns `null` when not not found
+        //
+        // but this should never be reached
+        // if `num` is in the interval: `[0, rows * cols]`
         return null;
     }
 
@@ -299,7 +301,7 @@ public class GamePanel extends JPanel implements ActionListener {
     private ArrayList<Integer> getBlankNeighbors() {
         Point empty = getTile(0);
 
-        ArrayList<Integer> neighbors = new ArrayList<>();
+        ArrayList<Integer> neighbors = new ArrayList<Integer>();
         Point[] points = {
             new Point(empty.x - 1, empty.y),
             new Point(empty.x + 1, empty.y),
