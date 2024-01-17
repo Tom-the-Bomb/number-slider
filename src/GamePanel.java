@@ -6,6 +6,7 @@ import java.time.Duration;
 
 import java.awt.*;
 import java.awt.event.*;
+
 import javax.swing.*;
 
 // Panel displaying solely the game board's matrix of buttons
@@ -134,9 +135,15 @@ public class GamePanel extends JPanel implements ActionListener {
         String formatted = "";
 
         long days = duration.toDays();
-        int hours = duration.toHoursPart();
-        int minutes = duration.toMinutesPart();
-        int seconds = duration.toSecondsPart();
+        duration = duration.minusDays(days);
+
+        long hours = duration.toHours();
+        duration = duration.minusHours(hours);
+
+        long minutes = duration.toMinutes();
+        duration = duration.minusMinutes(minutes);
+
+        long seconds = duration.getSeconds();
 
         if (days > 0) {
             formatted += String.format(" %dd", days);
@@ -150,7 +157,7 @@ public class GamePanel extends JPanel implements ActionListener {
         if (seconds > 0) {
             formatted += String.format(" %ds", seconds);
         }
-        return "[" + formatted.strip() + "]";
+        return "[" + formatted.trim() + "]";
     }
 
     // converts a pair of (row, col) indices to a single index
