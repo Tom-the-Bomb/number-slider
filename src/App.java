@@ -265,46 +265,51 @@ public class App extends JPanel implements ActionListener {
             description.setContentType("text/html");
             description.setEditable(false);
             description.setText(
-                String.format(
-                    """
-                    <html>
-                        <div style="
-                            color: rgb(%d, %d, %d);
-                            font-size: 20pt;
-                            font-weight: 200;
-                        ">
-                            <pre>
-                    The goal of the game is to sort all the tiles in ascending order.
-
-                    The desired endgame layout is to have the top-left corner be a <b>[1]</b>
-                    and in <b>ascending</b> order all the way to the bottom-left which should be the <b>[largest number]</b>
-
-                    The dark gray tile represents the <b>empty</b> tile that its neighbors can swap to.
-                    Therefore, only the direct <b>neighbors</b> of that tile can be <b>clicked</b>
-                    and said tile will get <b>swapped</b> with the blank tile when <b>clicked</b>
-
-                    <b>Note:</b> All tiles that are in the <b>correct</b> position will be colored <b>green</b> instead
-                            </pre>
-                            <hr>
-                            <pre>
-                    Click <b>[Restart]</b> to generate a random fresh board (and to update grid size values)
-
-                    Enter <b>[# Rows]</b> (number from %d to %d) to change the number of rows of the grid
-                    Enter <b>[# Cols]</b> (number from %d to %d) to change number of columns of the grid
-                    (By default the grid size is <b>4x4</b>)
-
-                    <i>* All generated puzzles are guaranteed solvable</i>
-
-                    <b>Have Fun!</b>
-                            </pre>
-                        </div>
-                    </html>
-                    """,
-                    LABEL_COLOR.getRed(),
-                    LABEL_COLOR.getGreen(),
-                    LABEL_COLOR.getRed(),
-                    MIN_DIMS, MAX_DIMS,
-                    MIN_DIMS, MAX_DIMS
+                String.join(
+                    System.lineSeparator(),
+                    "<html>",
+                    "    <div style=\"",
+                    String.format(
+                        "        color: rgb(%d, %d, %d);",
+                        LABEL_COLOR.getRed(),
+                        LABEL_COLOR.getGreen(),
+                        LABEL_COLOR.getRed()
+                    ),
+                    "        font-size: 20pt;",
+                    "        font-weight: 200;",
+                    "    \">",
+                    "        <pre>",
+                    "The goal of the game is to sort all the tiles in ascending order.",
+                    "",
+                    "The desired endgame layout is to have the top-left corner be a <b>[1]</b>",
+                    "and in <b>ascending</b> order all the way to the bottom-left which should be the <b>[largest number]</b>",
+                    "",
+                    "The dark gray tile represents the <b>empty</b> tile that its neighbors can swap to.",
+                    "Therefore, only the direct <b>neighbors</b> of that tile can be <b>clicked</b>",
+                    "and said tile will get <b>swapped</b> with the blank tile when <b>clicked</b>",
+                    "",
+                    "<b>Note:</b> All tiles that are in the <b>correct</b> position will be colored <b>green</b> instead",
+                    "        </pre>",
+                    "        <hr>",
+                    "        <pre>",
+                    "Click <b>[Restart]</b> to generate a random fresh board (and to update grid size values)",
+                    "",
+                    String.format(
+                        "Enter <b>[# Rows]</b> (number from %d to %d) to change the number of rows of the grid",
+                        MIN_DIMS, MAX_DIMS
+                    ),
+                    String.format(
+                        "Enter <b>[# Cols]</b> (number from %d to %d) to change number of columns of the grid",
+                        MIN_DIMS, MAX_DIMS
+                    ),
+                    "(By default the grid size is <b>4x4</b>)",
+                    "",
+                    "<i>* All generated puzzles are guaranteed solvable</i>",
+                    "",
+                    "<b>Have Fun!</b>",
+                    "        </pre>",
+                    "    </div>",
+                    "</html>"
                 )
             );
             description.setOpaque(false);
