@@ -307,6 +307,11 @@ public class App extends JPanel implements ActionListener {
                     "<i>* All generated puzzles are guaranteed solvable</i>",
                     "",
                     "<b>Have Fun!</b>",
+                    "",
+                    String.format(
+                        "[Running on Java v%s]",
+                        System.getProperty("java.version")
+                    ),
                     "        </pre>",
                     "    </div>",
                     "</html>"
